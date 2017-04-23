@@ -53,6 +53,7 @@ class ElevatorLogic(object):
 
         floor: the floor that was requested
         """
+        self.record_select(floor)
         eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
 
     def on_floor_changed(self):
@@ -76,7 +77,13 @@ class ElevatorLogic(object):
         ########################
 
     def not_moving(self):
-        return self.movement_direction == None and self.callbacks.motor_direction == None
+        return self.current_direction() == None
+
+    def current_direction(self):
+        if self.callbacks.motor_direction:
+            return self.callbacks.motor_direction
+        if self.movement_direction:
+            return self.movement_direction
 
     def opposite(self, direction):
         if direction == UP:
@@ -96,7 +103,7 @@ class ElevatorLogic(object):
         return self.callbacks.current_floor
 
     def is_current_call_in_same_direction(self, direction):
-        return self.called[direction][self.current_floor()] and self.callbacks.motor_direction == direction
+        return self.called[direction][self.current_floor()] and self.current_direction() == direction
 
     def is_current_call_in_opposite_direction(self):
         if self.callbacks.motor_direction == UP:
@@ -111,14 +118,14 @@ class ElevatorLogic(object):
             self.called[UP][self.current_floor()] = None
 
     def more_requests_in_current_direction(self):
-        return self.more_requests_in_direction(self.callbacks.motor_direction)
+        return self.more_requests_in_direction(self.current_direction())
 
     def more_requests_in_direction(self, direction):
         if direction == UP:
             return self.list_idx(self.called[UP][self.current_floor():]) or \
                 self.list_idx(self.called[DOWN][self.current_floor():]) or \
                 self.list_idx(self.selected[self.current_floor():])
-        elif self.callbacks.motor_direction == DOWN:
+        elif direction == DOWN:
             return self.list_idx(self.called[UP][:self.current_floor()]) or \
                 self.list_idx(self.called[DOWN][:self.current_floor()]) or \
                 self.list_idx(self.selected[:self.current_floor()])
@@ -141,20 +148,43 @@ class ElevatorLogic(object):
     def called_idx(self, direction):
         return self.list_idx(self.called[direction])
 
+    """ returns the next selected idx in the given direction
+    """
+    def selected_idx(self, direction):
+        if direction == UP:
+            self.list_idx(self.selected[self.current_floor():])
+        elif direction == DOWN:
+            self.list_idx(self.selected[:self.current_floor()])
+
+    """ returns next selected floor in the same direction or a selected floor in any direction
+        if there is no current direction
+    """ 
+    def next_select_idx(self):
+        if self.current_direction():
+            if self.current_direction() == UP and self.selected_idx(UP):
+                return self.selected_idx(UP)
+            if self.current_direction == DOWN and self.selected_idx(DOWN):
+                return self.selected_idx(DOWN)
+        return self.list_idx(self.selected)
+
     def list_idx(self, lst):
         for i, j in enumerate(lst):
             if j:
                 return i
         return None
 
+
+    def next_call_idx(self):
+        if self.called_idx(UP):
+            return self.called_idx(UP)
+        elif self.called_idx(DOWN):
+            return self.called_idx(DOWN)
+
     def next_request_direction(self):
-        #TODO this only services calls, not selections
-        up = self.called_idx(UP)
-        if up:
-            return self.relative_direction(up)
-        down = self.called_idx(DOWN)
-        if down:
-            return self.relative_direction(down)
+        if self.next_select_idx():
+            return self.relative_direction(self.next_select_idx())
+        elif self.next_call_idx():
+            return self.relative_direction(self.next_call_idx())
 
     """ returns the movement direction """
     def clear_current_request(self):
@@ -180,6 +210,9 @@ class ElevatorLogic(object):
 
 
     def direction_to_move(self):
+        # if self.current_floor() == 3:
+        #     import pdb
+        #     pdb.set_trace()
 
         if self.should_stop():
             self.movement_direction = self.clear_current_request()
@@ -187,9 +220,13 @@ class ElevatorLogic(object):
         else:
             return self.next_request_direction()
 
+    def record_select(self, floor):
+        if self.relative_direction(floor) == self.current_direction():
+            self.selected[floor] = True
+
     def record_call(self, floor, direction):
-        if(self.callbacks.current_floor == floor):
-            return
+        if self.current_floor() == floor:
+            return #ignore
         self.called[direction][floor] = True
 
     def set_motor_direction(self,direction):
