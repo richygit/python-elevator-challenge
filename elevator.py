@@ -2,7 +2,8 @@ from __future__ import print_function
 import sys
 
 def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    #print(*args, file=sys.stderr, **kwargs)
+    a = 1
 
 UP = 1
 DOWN = 2
@@ -41,7 +42,6 @@ class ElevatorLogic(object):
         floor: the floor that the elevator is being called to
         direction: the direction the caller wants to go, up or down
         """
-        eprint('## Floor called: ' , floor , ',direction: ' , direction , ', current: ' , self.current_floor())
         self.record_call(floor, direction)
         self.move_check()
 
@@ -54,7 +54,6 @@ class ElevatorLogic(object):
         floor: the floor that was requested
         """
         self.record_select(floor)
-        eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
 
     def on_floor_changed(self):
         """
@@ -75,9 +74,6 @@ class ElevatorLogic(object):
 
 
         ########################
-
-    def not_moving(self):
-        return self.current_direction() == None
 
     def current_direction(self):
         if self.callbacks.motor_direction:
@@ -113,7 +109,7 @@ class ElevatorLogic(object):
                 self.list_idx(self.selected[:self.current_floor()])
 
     def final_request_in_current_direction(self):
-        if self.not_moving():
+        if self.current_direction() == None:
             return False
         else:
             return not self.more_requests_in_current_direction()
@@ -145,26 +141,33 @@ class ElevatorLogic(object):
         if self.list_idx(self.called[DOWN]):
             return self.relative_direction(self.list_idx(self.called[DOWN]))
 
+    """ clears the request which is the last in the current direction. returns the new movement direction
+    """
+    def clear_end_request(self):
+        if self.current_direction == UP and self.called[DOWN][self.current_floor()]:
+            self.called[DOWN][self.current_floor()] = None
+            return DOWN
+        if self.current_direction == DOWN and self.called[UP][self.current_floor()]:
+            self.called[UP][self.current_floor()] = None
+            return UP
+
     def clear_current_request(self):
         if self.selected[self.current_floor()]:
             self.selected[self.current_floor()] = None
+            return self.callbacks.motor_direction
         elif self.is_current_call_in_same_direction(DOWN):
             self.called[DOWN][self.current_floor()] = None
+            return self.callbacks.motor_direction
         elif self.is_current_call_in_same_direction(UP):
             self.called[UP][self.current_floor()] = None
+            return self.callbacks.motor_direction
+        elif self.final_request_in_current_direction():
+            return self.clear_end_request()
+
 
     def direction_to_move(self):
-        # if self.current_floor() == 3:
-        # import pdb
-        # pdb.set_trace()
-
         if self.should_stop():
-            self.clear_current_request()
-            if self.more_requests_in_current_direction():
-                self.movement_direction = self.callbacks.motor_direction
-            else:
-                self.movement_direction = None
-
+            self.movement_direction = self.clear_current_request()
             return None
         else:
             return self.next_request_direction()
@@ -172,13 +175,17 @@ class ElevatorLogic(object):
     def record_select(self, floor):
         if not self.current_direction():
             self.selected[floor] = True
+            eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
         elif self.relative_direction(floor) == self.current_direction():
             self.selected[floor] = True
+            eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
 
     def record_call(self, floor, direction):
         if self.current_floor() == floor:
             return #ignore
         self.called[direction][floor] = True
+        eprint('## Floor called: ' , floor , ',direction: ' , direction , ', current: ' , self.current_floor())
+
 
     def set_motor_direction(self,direction):
         if direction != None:
