@@ -211,8 +211,8 @@ class ElevatorLogic(object):
 
     def direction_to_move(self):
         # if self.current_floor() == 3:
-        #     import pdb
-        #     pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
 
         if self.should_stop():
             self.movement_direction = self.clear_current_request()
@@ -221,7 +221,9 @@ class ElevatorLogic(object):
             return self.next_request_direction()
 
     def record_select(self, floor):
-        if self.relative_direction(floor) == self.current_direction():
+        if not self.current_direction():
+            self.selected[floor] = True
+        elif self.relative_direction(floor) == self.current_direction():
             self.selected[floor] = True
 
     def record_call(self, floor, direction):
