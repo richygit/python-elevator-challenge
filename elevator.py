@@ -43,7 +43,8 @@ class ElevatorLogic(object):
         direction: the direction the caller wants to go, up or down
         """
         self.record_call(floor, direction)
-        self.move_check()
+        if self.callbacks.motor_direction == None:
+            self.move_check()
 
     def on_floor_selected(self, floor):
         """
@@ -205,7 +206,11 @@ class ElevatorLogic(object):
             eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
 
     def record_call(self, floor, direction):
-        if self.current_floor() == floor:
+        # if floor == 2:
+        #     import pdb
+        #     pdb.set_trace()
+
+        if self.current_floor() == floor and self.callbacks.motor_direction == None:
             return #ignore
         self.called[direction][floor] = True
         eprint('## Floor called: ' , floor , ',direction: ' , direction , ', current: ' , self.current_floor())
