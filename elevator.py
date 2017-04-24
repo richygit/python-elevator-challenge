@@ -104,13 +104,13 @@ class ElevatorLogic(object):
 
     def more_requests_in_direction(self, direction):
         if direction == UP:
-            return self.list_idx(self.called[UP][self.current_floor():]) or \
-                self.list_idx(self.called[DOWN][self.current_floor():]) or \
-                self.list_idx(self.selected[self.current_floor():])
+            return self.list_idx(self.called[UP][self.current_floor()+1:]) != None or \
+                self.list_idx(self.called[DOWN][self.current_floor()+1:]) != None or \
+                self.list_idx(self.selected[self.current_floor()+1:]) != None
         elif direction == DOWN:
-            return self.list_idx(self.called[UP][:self.current_floor()]) or \
-                self.list_idx(self.called[DOWN][:self.current_floor()]) or \
-                self.list_idx(self.selected[:self.current_floor()])
+            return self.list_idx(self.called[UP][:self.current_floor()]) != None or \
+                self.list_idx(self.called[DOWN][:self.current_floor()]) != None or \
+                self.list_idx(self.selected[:self.current_floor()]) != None
 
     def final_request_in_current_direction(self):
         if self.current_direction() == None:
@@ -184,7 +184,7 @@ class ElevatorLogic(object):
 
 
     def direction_to_move(self):
-        # if self.current_floor() == 5:
+        # if self.current_floor() == 3:
         #     import pdb
         #     pdb.set_trace()
 
