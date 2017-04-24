@@ -144,17 +144,18 @@ class ElevatorLogic(object):
     """ clears the request which is the last in the current direction. returns the new movement direction
     """
     def clear_end_request(self):
-        if self.current_direction == UP and self.called[DOWN][self.current_floor()]:
+        if self.current_direction() == UP and self.called[DOWN][self.current_floor()]:
             self.called[DOWN][self.current_floor()] = None
             return DOWN
-        if self.current_direction == DOWN and self.called[UP][self.current_floor()]:
+        if self.current_direction() == DOWN and self.called[UP][self.current_floor()]:
             self.called[UP][self.current_floor()] = None
             return UP
+        return self.next_request_direction()
 
     def clear_current_request(self):
         if self.selected[self.current_floor()]:
             self.selected[self.current_floor()] = None
-            return self.callbacks.motor_direction
+            return self.next_request_direction()
         elif self.is_current_call_in_same_direction(DOWN):
             self.called[DOWN][self.current_floor()] = None
             return self.callbacks.motor_direction
@@ -166,6 +167,10 @@ class ElevatorLogic(object):
 
 
     def direction_to_move(self):
+        # if self.current_floor() == 5:
+        #     import pdb
+        #     pdb.set_trace()
+
         if self.should_stop():
             self.movement_direction = self.clear_current_request()
             return None
