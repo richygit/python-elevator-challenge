@@ -30,7 +30,7 @@ class ElevatorLogic(object):
         down = [None] * size
         self.called = [None, up, down]
         self.selected = [None] * size
-        #set when motor not moving to indicate the service direction
+        #last motor direction
         self.movement_direction = None
 
     def on_called(self, floor, direction):
@@ -141,7 +141,7 @@ class ElevatorLogic(object):
         if self.list_idx(self.called[DOWN]):
             return self.relative_direction(self.list_idx(self.called[DOWN]))
 
-    """ clears the request which is the last in the current direction. returns the new movement direction
+    """ clears the request which is the last in the current direction. returns next direction
     """
     def clear_end_request(self):
         if self.current_direction() == UP and self.called[DOWN][self.current_floor()]:
@@ -150,19 +150,20 @@ class ElevatorLogic(object):
         if self.current_direction() == DOWN and self.called[UP][self.current_floor()]:
             self.called[UP][self.current_floor()] = None
             return UP
-        return self.next_request_direction()
 
     def clear_current_request(self):
         if self.selected[self.current_floor()]:
             self.selected[self.current_floor()] = None
-            return self.next_request_direction()
+            return self.callbacks.motor_direction
         elif self.is_current_call_in_same_direction(DOWN):
             self.called[DOWN][self.current_floor()] = None
             return self.callbacks.motor_direction
         elif self.is_current_call_in_same_direction(UP):
             self.called[UP][self.current_floor()] = None
             return self.callbacks.motor_direction
-        elif self.final_request_in_current_direction():
+
+
+        if self.final_request_in_current_direction():
             return self.clear_end_request()
 
 
@@ -170,6 +171,9 @@ class ElevatorLogic(object):
         # if self.current_floor() == 5:
         #     import pdb
         #     pdb.set_trace()
+
+        if self.movement_direction and not self.more_requests_in_current_direction():
+            self.movement_direction = None
 
         if self.should_stop():
             self.movement_direction = self.clear_current_request()
