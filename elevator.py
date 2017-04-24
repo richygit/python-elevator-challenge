@@ -152,16 +152,18 @@ class ElevatorLogic(object):
             return UP
 
     def clear_current_request(self):
+        cleared = False
         if self.selected[self.current_floor()]:
             self.selected[self.current_floor()] = None
-            return self.callbacks.motor_direction
-        elif self.is_current_call_in_same_direction(DOWN):
+            cleared = True
+        if self.is_current_call_in_same_direction(DOWN):
             self.called[DOWN][self.current_floor()] = None
-            return self.callbacks.motor_direction
-        elif self.is_current_call_in_same_direction(UP):
+            cleared = True
+        if self.is_current_call_in_same_direction(UP):
             self.called[UP][self.current_floor()] = None
+            cleared = True
+        if cleared:
             return self.callbacks.motor_direction
-
 
         if self.final_request_in_current_direction():
             return self.clear_end_request()
