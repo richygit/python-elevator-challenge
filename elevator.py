@@ -95,6 +95,9 @@ class ElevatorLogic(object):
     def is_current_call_in_same_direction(self, direction):
         return self.called[direction][self.current_floor()] and self.current_direction() == direction
 
+    def has_call_on_current_floor(self):
+        return self.called[UP][self.current_floor()] or self.called[DOWN][self.current_floor()]
+
     def more_requests_in_current_direction(self):
         return self.more_requests_in_direction(self.current_direction())
 
@@ -119,7 +122,8 @@ class ElevatorLogic(object):
         return self.is_current_call_in_same_direction(UP) or \
             self.is_current_call_in_same_direction(DOWN) or \
             self.final_request_in_current_direction() or \
-            self.selected[self.current_floor()]
+            self.selected[self.current_floor()] or \
+            (self.has_call_on_current_floor() and self.current_direction() == None)
 
     def list_idx(self, lst):
         for i, j in enumerate(lst):
@@ -167,6 +171,15 @@ class ElevatorLogic(object):
 
         if self.final_request_in_current_direction():
             return self.clear_end_request()
+
+        if self.current_direction() == None:
+            if self.called[DOWN][self.current_floor()]:
+                self.called[DOWN][self.current_floor()] = None
+                return DOWN
+            if self.called[UP][self.current_floor()]:
+                self.called[UP][self.current_floor()] = None
+                return UP
+
 
 
     def direction_to_move(self):
