@@ -1,10 +1,6 @@
 from __future__ import print_function
 import sys
 
-def eprint(*args, **kwargs):
-    #print(*args, file=sys.stderr, **kwargs)
-    a = 1
-
 UP = 1
 DOWN = 2
 FLOOR_COUNT = 6
@@ -63,7 +59,6 @@ class ElevatorLogic(object):
         This lets you know that the elevator has moved one floor up or down.
         You should decide whether or not you want to stop the elevator.
         """
-        eprint( '## Floor change: ' , self.current_floor())
         self.move_check()
 
     def on_ready(self):
@@ -72,7 +67,6 @@ class ElevatorLogic(object):
         Maybe passengers have embarked and disembarked. The doors are closed,
         time to actually move, if necessary.
         """
-        eprint( '## Ready: ' , self.current_floor())
         self.move_check()
 
 
@@ -158,22 +152,34 @@ class ElevatorLogic(object):
             self.called[UP][self.current_floor()] = None
             return UP
 
-    def clear_current_request(self):
-        cleared = False
-        if self.selected[self.current_floor()]:
-            self.selected[self.current_floor()] = None
-            cleared = True
+    # returns whether a call in the same direction was cleared
+    def clear_call_request_in_same_direction(self):
+        call_cleared = False
         if self.is_current_call_in_same_direction(DOWN):
             self.called[DOWN][self.current_floor()] = None
-            cleared = True
+            call_cleared = True
         if self.is_current_call_in_same_direction(UP):
             self.called[UP][self.current_floor()] = None
-            cleared = True
-        if cleared:
+            call_cleared = True
+        return call_cleared
+
+    def clear_select(self):
+        if self.selected[self.current_floor()]:
+            self.selected[self.current_floor()] = None
+            return True
+        return False
+
+    def clear_current_request(self):
+        call_cleared = self.clear_call_request_in_same_direction()
+        select_cleared = self.clear_select()
+
+        if call_cleared:
             return self.callbacks.motor_direction
 
         if self.final_request_in_current_direction():
             return self.clear_end_request()
+        elif select_cleared:
+            return self.callbacks.motor_direction
 
         if self.current_direction() == None:
             if self.called[DOWN][self.current_floor()]:
@@ -183,13 +189,7 @@ class ElevatorLogic(object):
                 self.called[UP][self.current_floor()] = None
                 return UP
 
-
-
     def direction_to_move(self):
-        # if self.current_floor() == 3:
-        #     import pdb
-        #     pdb.set_trace()
-
         if self.movement_direction and not self.more_requests_in_current_direction():
             self.movement_direction = None
 
@@ -200,28 +200,22 @@ class ElevatorLogic(object):
             return self.next_request_direction()
 
     def record_select(self, floor):
+        if self.relative_direction(floor) == self.current_direction():
+            self.selected[floor] = True
+            return
+
         if not self.current_direction():
             self.selected[floor] = True
-            eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
-        elif self.relative_direction(floor) == self.current_direction():
-            self.selected[floor] = True
-            eprint( '## Floor selected: ' , floor , ', current: ' , self.current_floor())
 
     def record_call(self, floor, direction):
-        # if floor == 2:
-        #     import pdb
-        #     pdb.set_trace()
-
         if self.current_floor() == floor and self.callbacks.motor_direction == None:
             return #ignore
         self.called[direction][floor] = True
-        eprint('## Floor called: ' , floor , ',direction: ' , direction , ', current: ' , self.current_floor())
 
 
     def set_motor_direction(self,direction):
         if direction != None:
             self.movement_direction = None
-        eprint('## motor set: ', direction)
         self.callbacks.motor_direction = direction
 
     def move_check(self):
