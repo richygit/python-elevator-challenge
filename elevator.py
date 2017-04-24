@@ -55,6 +55,8 @@ class ElevatorLogic(object):
         floor: the floor that was requested
         """
         self.record_select(floor)
+        if self.current_direction() == None:
+            self.move_check()
 
     def on_floor_changed(self):
         """
