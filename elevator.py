@@ -1,5 +1,5 @@
-from __future__ import print_function
 import sys
+from floors import Floors
 
 UP = 1
 DOWN = 2
@@ -22,10 +22,10 @@ class ElevatorLogic(object):
     def __init__(self):
         self.callbacks = None
         size = FLOOR_COUNT+1
-        up = [None] * size
-        down = [None] * size
+        up = Floors.pre_initialised(size)
+        down = Floors.pre_initialised(size)
         self.called = [None, up, down]
-        self.selected = [None] * size
+        self.selected = Floors.pre_initialised(size)
         #last motor direction
         self.movement_direction = None
 
@@ -100,6 +100,16 @@ class ElevatorLogic(object):
 
     def more_requests_in_direction(self, direction):
         if direction == UP:
+            return self.called[UP].find_from(self.current_floor()) != None or \
+                self.called[DOWN].find_from(self.current_floor()) != None or \
+                self.selected.find_from(self.current_floor()) != None
+        elif direction == DOWN:
+            return self.called[UP].find_until(self.current_floor()) != None or \
+                self.called[DOWN].find_until(self.current_floor()) != None or \
+                self.selected.find_until(self.current_floor()) != None
+
+        """
+        if direction == UP:
             return self.list_idx(self.called[UP][self.current_floor()+1:]) != None or \
                 self.list_idx(self.called[DOWN][self.current_floor()+1:]) != None or \
                 self.list_idx(self.selected[self.current_floor()+1:]) != None
@@ -107,6 +117,7 @@ class ElevatorLogic(object):
             return self.list_idx(self.called[UP][:self.current_floor()]) != None or \
                 self.list_idx(self.called[DOWN][:self.current_floor()]) != None or \
                 self.list_idx(self.selected[:self.current_floor()]) != None
+        """
 
     def final_request_in_current_direction(self):
         if self.current_direction() == None:
@@ -122,25 +133,19 @@ class ElevatorLogic(object):
             self.selected[self.current_floor()] or \
             (self.has_call_on_current_floor() and self.current_direction() == None)
 
-    def list_idx(self, lst):
-        for i, j in enumerate(lst):
-            if j:
-                return i
-        return None
-
     def next_request_direction(self):
         if self.more_requests_in_current_direction():
             return self.current_direction()
 
-        if self.list_idx(self.selected):
-            return self.relative_direction(self.list_idx(self.selected))
+        if self.selected.list_idx():
+            return self.relative_direction(self.selected.list_idx())
 
         #just go in the direction of any call, the priority is not important
-        if self.list_idx(self.called[UP]):
-            return self.relative_direction(self.list_idx(self.called[UP]))
+        if self.called[UP].list_idx():
+            return self.relative_direction(self.called[UP].list_idx())
 
-        if self.list_idx(self.called[DOWN]):
-            return self.relative_direction(self.list_idx(self.called[DOWN]))
+        if self.called[DOWN].list_idx():
+            return self.relative_direction(self.called[DOWN].list_idx())
 
     """ clears the request which is the last in the current direction. returns next direction
     """
