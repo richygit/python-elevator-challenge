@@ -108,17 +108,6 @@ class ElevatorLogic(object):
                 self.called[DOWN].find_until(self.current_floor()) != None or \
                 self.selected.find_until(self.current_floor()) != None
 
-        """
-        if direction == UP:
-            return self.list_idx(self.called[UP][self.current_floor()+1:]) != None or \
-                self.list_idx(self.called[DOWN][self.current_floor()+1:]) != None or \
-                self.list_idx(self.selected[self.current_floor()+1:]) != None
-        elif direction == DOWN:
-            return self.list_idx(self.called[UP][:self.current_floor()]) != None or \
-                self.list_idx(self.called[DOWN][:self.current_floor()]) != None or \
-                self.list_idx(self.selected[:self.current_floor()]) != None
-        """
-
     def final_request_in_current_direction(self):
         if self.current_direction() == None:
             return False
